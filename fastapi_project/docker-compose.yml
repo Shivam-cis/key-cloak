@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: abcd!123
+    ports:
+      - "5432:5432"
+    restart:
+      always
+
+  keycloak:
+    image: jboss/keycloak:16.1.0   
+    volumes:
+      - ./realm-export.json:/opt/jboss/keycloak/imports/realm-export.json
+    command:
+      - "-b 0.0.0.0 -Dkeycloak.profile.feature.upload_scripts=enabled -Dkeycloak.import=/opt/jboss/keycloak/imports/realm-export.json"
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_DATABASE: user_db
+      DB_USER: root
+      DB_SCHEMA: public
+      DB_PASSWORD: abcd!123
+      KEYCLOAK_USER: keycloakuser
+      KEYCLOAK_PASSWORD: keycloakpassword
+      PROXY_ADDRESS_FORWARDING: "true"
+      KEYCLOAK_LOGLEVEL: DEBUG
+    ports:
+      - '8085:8080'
+    depends_on:
+      - postgres
+    restart:
+      always
+
+  # web:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8000:80"
+  #     # - '8085:8085'
+  #   volumes:
+  #     - ./app:/app
+  #     - ./app/alembic:/app/alembic
+  #   environment:
+  #     - MODULE_NAME=main
+  #     - VARIABLE_NAME=app
+  #     - DATABASE_URL=postgresql://root:abcd!123@postgres:5432/user_db
+  #   command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+  #   depends_on:
+  #     - postgres
+
+  
